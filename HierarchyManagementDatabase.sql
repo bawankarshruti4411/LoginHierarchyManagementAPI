@@ -85,3 +85,18 @@ INSERT INTO user_operations (id,user_id,operation_id) VALUES
 -- Neha
 (9,4,4),
 (10,4,5);
+
+CREATE INDEX idx_admin_email
+ON company_admins(email);
+
+CREATE INDEX idx_user_email
+ON company_users(email);
+
+CREATE INDEX idx_user_operations_user
+ON user_operations(user_id);
+
+CREATE INDEX idx_user_operations_operation
+ON user_operations(operation_id);
+
+CREATE INDEX idx_user_operations_composite
+ON user_operations(user_id, operation_id);
