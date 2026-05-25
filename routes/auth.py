@@ -10,57 +10,52 @@ SUPER_ADMIN = {
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+
     data = request.json
+
     email = data.get("email")
     password = data.get("password")
 
-    # Super Admin
+    # Super Admin Check
     if (
         email == SUPER_ADMIN["email"]
         and password == SUPER_ADMIN["password"]
     ):
-        return jsonify({"role": "super_admin"})
+        return jsonify({
+            "role": "super_admin"
+        })
 
     db, cursor = get_db()
 
-    # Company Admin
     cursor.execute(
         """
-        SELECT *
+        SELECT id, 'company_admin' AS role
         FROM company_admins
-        WHERE email=%s
-        AND password=%s
-        """,
-        (email, password)
-    )
-    admin = cursor.fetchone()
+        WHERE email=%s AND password=%s
 
-    if admin:
-        cursor.close()
-        db.close()
-        return jsonify({
-            "role": "company_admin",
-            "admin_id": admin["id"]
-        })
+        UNION ALL
 
-    # Company User
-    cursor.execute(
-        """
-        SELECT *
+        SELECT id, 'company_user' AS role
         FROM company_users
-        WHERE email=%s
-        AND password=%s
+        WHERE email=%s AND password=%s
+
+        LIMIT 1
         """,
-        (email, password)
+        (email, password, email, password)
     )
+
     user = cursor.fetchone()
+
     cursor.close()
     db.close()
 
     if user:
+
         return jsonify({
-            "role": "company_user",
-            "user_id": user["id"]
+            "role": user["role"],
+            "id": user["id"]
         })
 
-    return jsonify({"message": "Invalid Credentials"}), 401
+    return jsonify({
+        "message": "Invalid Credentials"
+    }), 401
