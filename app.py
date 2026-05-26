@@ -9,6 +9,8 @@ from routes.permissions import permissions_bp
 
 app = Flask(__name__)
 
+app.config["SECRET_KEY"] = "supersecretkey"
+
 CORS(app)
 
 app.register_blueprint(auth_bp)
