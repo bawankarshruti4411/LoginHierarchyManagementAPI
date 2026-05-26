@@ -121,6 +121,20 @@ def delete_user(user_id):
 
 
 
+        # DELETE CHILD RECORDS FIRST
+
+        cursor.execute(
+            """
+            DELETE FROM user_operations
+            WHERE user_id=%s
+            """,
+            (user_id,)
+        )
+
+
+
+        # DELETE USER
+
         cursor.execute(
             """
             DELETE FROM company_users
