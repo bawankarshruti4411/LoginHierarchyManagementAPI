@@ -108,3 +108,37 @@ def create_user():
         "message":
         "User Created Successfully"
     })
+
+@users_bp.route(
+    "/users/<int:user_id>",
+    methods=["DELETE"]
+)
+def delete_user(user_id):
+
+    db, cursor = get_db()
+
+
+
+    cursor.execute(
+        """
+        DELETE FROM company_users
+        WHERE id=%s
+        """,
+        (user_id,)
+    )
+
+
+
+    db.commit()
+
+
+
+    cursor.close()
+    db.close()
+
+
+
+    return jsonify({
+        "message":
+        "User Deleted Successfully"
+    })
