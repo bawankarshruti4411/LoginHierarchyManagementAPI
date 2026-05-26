@@ -166,3 +166,68 @@ def delete_user(user_id):
         return jsonify({
             "error": str(e)
         }), 500
+
+
+
+@users_bp.route(
+    "/users/<int:user_id>",
+    methods=["PUT"]
+)
+def update_user(user_id):
+
+    try:
+
+        data = request.json
+
+
+
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+
+
+
+        db, cursor = get_db()
+
+
+
+        cursor.execute(
+            """
+            UPDATE company_users
+            SET
+                name=%s,
+                email=%s,
+                password=%s
+            WHERE id=%s
+            """,
+            (
+                name,
+                email,
+                password,
+                user_id
+            )
+        )
+
+
+
+        db.commit()
+
+
+
+        cursor.close()
+        db.close()
+
+
+
+        return jsonify({
+            "message":
+            "User Updated Successfully"
+        })
+
+
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
