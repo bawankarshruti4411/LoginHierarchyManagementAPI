@@ -1,3 +1,8 @@
+import jwt
+
+import datetime
+
+from flask import current_app
 from flask import Blueprint, request, jsonify
 from db import get_db
 
@@ -21,10 +26,22 @@ def login():
         email == SUPER_ADMIN["email"]
         and password == SUPER_ADMIN["password"]
     ):
-        return jsonify({
-            "role": "super_admin"
-        })
+        token = jwt.encode(
 
+    {
+        "email": email,
+        "role": "super_admin",
+        "exp":
+        datetime.datetime.utcnow()
+        + datetime.timedelta(hours=24)
+    },
+    current_app.config["SECRET_KEY"],
+    algorithm="HS256"
+)
+return jsonify({
+    "role": "super_admin",
+    "token": token
+})
     db, cursor = get_db()
 
     cursor.execute(
