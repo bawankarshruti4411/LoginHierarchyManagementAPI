@@ -30,18 +30,28 @@ def login():
 
     {
         "email": email,
+        
         "role": "super_admin",
+        
         "exp":
         datetime.datetime.utcnow()
         + datetime.timedelta(hours=24)
+        
     },
+            
     current_app.config["SECRET_KEY"],
+            
     algorithm="HS256"
 )
+        
 return jsonify({
+    
     "role": "super_admin",
+    
     "token": token
+    
 })
+
     db, cursor = get_db()
 
     cursor.execute(
