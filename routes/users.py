@@ -60,3 +60,51 @@ def get_user(user_id):
     db.close()
 
     return jsonify(user)
+
+
+@users_bp.route("/users", methods=["POST"])
+def create_user():
+
+    data = request.json
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+    admin_id = data.get("admin_id")
+
+
+
+    db, cursor = get_db()
+
+
+
+    cursor.execute(
+        """
+        INSERT INTO company_users
+        (name, email, password, admin_id)
+
+        VALUES (%s, %s, %s, %s)
+        """,
+        (
+            name,
+            email,
+            password,
+            admin_id
+        )
+    )
+
+
+
+    db.commit()
+
+
+
+    cursor.close()
+    db.close()
+
+
+
+    return jsonify({
+        "message":
+        "User Created Successfully"
+    })
