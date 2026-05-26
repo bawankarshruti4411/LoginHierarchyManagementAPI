@@ -115,30 +115,40 @@ def create_user():
 )
 def delete_user(user_id):
 
-    db, cursor = get_db()
+    try:
+
+        db, cursor = get_db()
 
 
 
-    cursor.execute(
-        """
-        DELETE FROM company_users
-        WHERE id=%s
-        """,
-        (user_id,)
-    )
+        cursor.execute(
+            """
+            DELETE FROM company_users
+            WHERE id=%s
+            """,
+            (user_id,)
+        )
 
 
 
-    db.commit()
+        db.commit()
 
 
 
-    cursor.close()
-    db.close()
+        cursor.close()
+        db.close()
 
 
 
-    return jsonify({
-        "message":
-        "User Deleted Successfully"
-    })
+        return jsonify({
+            "message":
+            "User Deleted Successfully"
+        })
+
+
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 500
