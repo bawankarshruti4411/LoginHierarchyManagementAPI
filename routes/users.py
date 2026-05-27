@@ -1,11 +1,11 @@
 from flask import Blueprint, jsonify, request
 from db import get_db
-
+from middleware.auth_middleware import token_required
 users_bp = Blueprint("users", __name__)
 
-
 @users_bp.route("/users", methods=["GET"])
-def get_users():
+@token_required
+def get_users(current_user):
 
     page = int(
         request.args.get("page", 1)
@@ -63,21 +63,14 @@ def get_user(user_id):
 
 
 @users_bp.route("/users", methods=["POST"])
-def create_user():
-
+@token_required
+def create_user(current_user):
     data = request.json
-
     name = data.get("name")
     email = data.get("email")
     password = data.get("password")
     admin_id = data.get("admin_id")
-
-
-
     db, cursor = get_db()
-
-
-
     cursor.execute(
         """
         INSERT INTO company_users
@@ -92,18 +85,9 @@ def create_user():
             admin_id
         )
     )
-
-
-
     db.commit()
-
-
-
     cursor.close()
     db.close()
-
-
-
     return jsonify({
         "message":
         "User Created Successfully"
@@ -113,16 +97,11 @@ def create_user():
     "/users/<int:user_id>",
     methods=["DELETE"]
 )
-def delete_user(user_id):
-
+@token_required
+def delete_user(current_user, user_id):
     try:
-
         db, cursor = get_db()
-
-
-
         # DELETE CHILD RECORDS FIRST
-
         cursor.execute(
             """
             DELETE FROM user_operations
@@ -130,11 +109,7 @@ def delete_user(user_id):
             """,
             (user_id,)
         )
-
-
-
         # DELETE USER
-
         cursor.execute(
             """
             DELETE FROM company_users
@@ -142,55 +117,29 @@ def delete_user(user_id):
             """,
             (user_id,)
         )
-
-
-
         db.commit()
-
-
-
         cursor.close()
         db.close()
-
-
-
         return jsonify({
             "message":
             "User Deleted Successfully"
         })
-
-
-
     except Exception as e:
-
         return jsonify({
             "error": str(e)
         }), 500
-
-
-
 @users_bp.route(
     "/users/<int:user_id>",
     methods=["PUT"]
 )
-def update_user(user_id):
-
+@token_required
+def update_user(current_user, user_id):
     try:
-
         data = request.json
-
-
-
         name = data.get("name")
         email = data.get("email")
         password = data.get("password")
-
-
-
         db, cursor = get_db()
-
-
-
         cursor.execute(
             """
             UPDATE company_users
@@ -207,25 +156,13 @@ def update_user(user_id):
                 user_id
             )
         )
-
-
-
         db.commit()
-
-
-
         cursor.close()
         db.close()
-
-
-
         return jsonify({
             "message":
             "User Updated Successfully"
         })
-
-
-
     except Exception as e:
 
         return jsonify({
