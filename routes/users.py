@@ -6,50 +6,44 @@ users_bp = Blueprint("users", __name__)
 
 @users_bp.route("/users", methods=["GET"])
 @token_required
-@role_required(["super_admin","company_admin"])
+@role_required(["super_admin", "company_admin"])
 def get_users(current_user):
 
-    page = int(
-        request.args.get("page", 1)
-    )
-
-    limit = int(
-        request.args.get("limit", 20)
-    )
+    page = int(request.args.get("page", 1))
+    limit = int(request.args.get("limit", 20))
 
     offset = (page - 1) * limit
 
     db, cursor = get_db()
 
     cursor.execute("""
-    SELECT COUNT(*) as total
-    FROM company_users
-""")
+        SELECT COUNT(*) AS total
+        FROM company_users
+    """)
 
-total = cursor.fetchone()["total"]
+    total = cursor.fetchone()["total"]
 
-cursor.execute("""
-    SELECT id,
-           name,
-           email
-    FROM company_users
-    ORDER BY id DESC
-    LIMIT %s OFFSET %s
-""", (limit, offset))
+    cursor.execute("""
+        SELECT
+            id,
+            name,
+            email
+        FROM company_users
+        ORDER BY id DESC
+        LIMIT %s OFFSET %s
+    """, (limit, offset))
 
-users = cursor.fetchall()
-
-return jsonify({
-    "total": total,
-    "page": page,
-    "limit": limit,
-    "data": users
-})
     users = cursor.fetchall()
+
     cursor.close()
     db.close()
-    return jsonify(users)
 
+    return jsonify({
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "data": users
+    })
 @users_bp.route("/users/<int:user_id>", methods=["GET"])
 @token_required
 @role_required(["super_admin","company_admin"])
