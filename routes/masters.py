@@ -1,15 +1,13 @@
 from flask import Blueprint, jsonify, request
-
 from db import get_db
 
 masters_bp = Blueprint("masters", __name__)
 
-
 @masters_bp.route("/masters", methods=["GET"])
+@token_required
 def get_masters():
 
     db, cursor = get_db()
-
     cursor.execute(
         """
         SELECT *
@@ -17,22 +15,15 @@ def get_masters():
         ORDER BY id
         """
     )
-
     masters = cursor.fetchall()
-
     cursor.close()
     db.close()
-
     return jsonify(masters)
-
-
 @masters_bp.route("/masters", methods=["POST"])
+@token_required
 def create_master():
-
     data = request.json
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         INSERT INTO masters
@@ -44,24 +35,18 @@ def create_master():
             data["description"]
         )
     )
-
     db.commit()
-
     cursor.close()
     db.close()
-
     return jsonify({
         "message": "Master Created"
     })
 
-
 @masters_bp.route("/masters/<int:id>", methods=["PUT"])
+@token_required
 def update_master(id):
-
     data = request.json
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         UPDATE masters
@@ -75,22 +60,16 @@ def update_master(id):
             id
         )
     )
-
     db.commit()
-
     cursor.close()
     db.close()
-
     return jsonify({
         "message": "Master Updated"
     })
-
-
 @masters_bp.route("/masters/<int:id>", methods=["DELETE"])
+@token_required
 def delete_master(id):
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         DELETE FROM masters
@@ -98,9 +77,7 @@ def delete_master(id):
         """,
         (id,)
     )
-
     db.commit()
-
     cursor.close()
     db.close()
 
