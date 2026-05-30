@@ -5,6 +5,7 @@ import datetime
 from flask import current_app
 
 auth_bp = Blueprint("auth", __name__)
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
 
@@ -13,41 +14,43 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
+    db, cursor = get_db()
+
     # SUPER ADMIN LOGIN
-db, cursor = get_db()
-cursor.execute(
-    """
-    SELECT *
-    FROM super_admins
-    WHERE email=%s
-    AND password=%s
-    """,
-    (email, password)
-)
-super_admin = cursor.fetchone()
-if super_admin:
-    token = jwt.encode(
-        {
-            "id": super_admin["id"],
-            "email": super_admin["email"],
-            "role": "super_admin",
-            "exp":
-            datetime.datetime.utcnow()
-            + datetime.timedelta(hours=24)
-        },
-        current_app.config["SECRET_KEY"],
-        algorithm="HS256"
+    cursor.execute(
+        """
+        SELECT *
+        FROM super_admins
+        WHERE email=%s
+        AND password=%s
+        """,
+        (email, password)
     )
 
-    cursor.close()
-    db.close()
+    super_admin = cursor.fetchone()
 
-    return jsonify({
-        "role": "super_admin",
-        "token": token
-    })
-    # DATABASE CONNECTION
-    db, cursor = get_db()
+    if super_admin:
+
+        token = jwt.encode(
+            {
+                "id": super_admin["id"],
+                "email": super_admin["email"],
+                "role": "super_admin",
+                "exp": datetime.datetime.utcnow()
+                + datetime.timedelta(hours=24)
+            },
+            current_app.config["SECRET_KEY"],
+            algorithm="HS256"
+        )
+
+        cursor.close()
+        db.close()
+
+        return jsonify({
+            "role": "super_admin",
+            "token": token
+        })
+
     # COMPANY ADMIN LOGIN
     cursor.execute(
         """
@@ -56,33 +59,33 @@ if super_admin:
         WHERE email=%s
         AND password=%s
         """,
-
         (email, password)
     )
 
     admin = cursor.fetchone()
-if admin:
-    token = jwt.encode(
-        {
-            "id": admin["id"],
-            "email": admin["email"],
+
+    if admin:
+
+        token = jwt.encode(
+            {
+                "id": admin["id"],
+                "email": admin["email"],
+                "role": "company_admin",
+                "exp": datetime.datetime.utcnow()
+                + datetime.timedelta(hours=24)
+            },
+            current_app.config["SECRET_KEY"],
+            algorithm="HS256"
+        )
+
+        cursor.close()
+        db.close()
+
+        return jsonify({
             "role": "company_admin",
-            "exp":
-            datetime.datetime.utcnow()
-            + datetime.timedelta(hours=24)
-        },
-        current_app.config["SECRET_KEY"],
-        algorithm="HS256"
-    )
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-        "role": "company_admin",
-        "admin_id": admin["id"],
-        "token": token
-    })
+            "admin_id": admin["id"],
+            "token": token
+        })
 
     # COMPANY USER LOGIN
     cursor.execute(
@@ -92,7 +95,6 @@ if admin:
         WHERE email=%s
         AND password=%s
         """,
-
         (email, password)
     )
 
@@ -102,13 +104,12 @@ if admin:
 
         token = jwt.encode(
             {
-                "user_id": user["id"],
+                "id": user["id"],
                 "email": user["email"],
                 "role": "company_user",
                 "exp": datetime.datetime.utcnow()
                 + datetime.timedelta(hours=24)
             },
-
             current_app.config["SECRET_KEY"],
             algorithm="HS256"
         )
