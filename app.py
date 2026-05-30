@@ -1,6 +1,6 @@
+import os
 from flask import Flask
 from flask_cors import CORS
-
 from routes.auth import auth_bp
 from routes.masters import masters_bp
 from routes.operations import operations_bp
@@ -10,8 +10,10 @@ from routes.permissions import permissions_bp
 app = Flask(__name__)
 
 # SECRET KEY
-app.config["SECRET_KEY"] = "supersecretkey"
-
+app.config["SECRET_KEY"] = os.getenv(
+    "SECRET_KEY",
+    "hierarchy_management_super_secret_key_2026_secure"
+)
 # ENABLE CORS
 CORS(app)
 
