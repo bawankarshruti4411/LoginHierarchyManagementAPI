@@ -5,13 +5,6 @@ import datetime
 from flask import current_app
 
 auth_bp = Blueprint("auth", __name__)
-
-SUPER_ADMIN = {
-    "email": "superadmin@gmail.com",
-    "password": "admin123"
-}
-
-
 @auth_bp.route("/login", methods=["POST"])
 def login():
 
@@ -21,11 +14,18 @@ def login():
     password = data.get("password")
 
     # SUPER ADMIN LOGIN
-    if (
-        email == SUPER_ADMIN["email"]
-        and password == SUPER_ADMIN["password"]
-    ):
-
+db, cursor = get_db()
+cursor.execute(
+    """
+    SELECT *
+    FROM super_admins
+    WHERE email=%s
+    AND password=%s
+    """,
+    (email, password)
+)
+super_admin = cursor.fetchone()
+if super_admin:
         token = jwt.encode(
             {
                 "email": email,
