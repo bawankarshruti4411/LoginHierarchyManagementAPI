@@ -7,7 +7,7 @@ permissions_bp = Blueprint(
 )
 @permissions_bp.route("/assign-operation",methods=["POST"])
 @token_required
-def assign_operation():
+def assign_operation(current_user):
     data = request.json
     user_id = data["user_id"]
     operation_ids = data["operation_ids"]
@@ -45,7 +45,7 @@ def assign_operation():
     })
 @permissions_bp.route("/user/<int:user_id>/operations",methods=["GET"])
 @token_required
-def get_user_operations(user_id):
+def get_user_operations(current_user):
     db, cursor = get_db()
     cursor.execute(
         """
@@ -71,7 +71,7 @@ def get_user_operations(user_id):
     return jsonify(operations)
 @permissions_bp.route("/check-access",methods=["POST"])
 @token_required
-def check_access():
+def check_access(current_user):
     data = request.json
     user_id = data["user_id"]
     operation_id = data["operation_id"]
