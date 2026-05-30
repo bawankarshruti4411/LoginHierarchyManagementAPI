@@ -2,84 +2,103 @@ from flask import Blueprint, jsonify, request
 from db import get_db
 from middleware.auth_middleware import token_required
 from middleware.role_middleware import role_required
+
 masters_bp = Blueprint("masters", __name__)
+
 
 @masters_bp.route("/masters", methods=["GET"])
 @token_required
 @role_required(["super_admin"])
-def get_masters():
+def get_masters(current_user):
 
     db, cursor = get_db()
-    cursor.execute(
-        """
+
+    cursor.execute("""
         SELECT *
         FROM masters
         ORDER BY id
-        """
-    )
+    """)
+
     masters = cursor.fetchall()
+
     cursor.close()
     db.close()
+
     return jsonify(masters)
+
+
 @masters_bp.route("/masters", methods=["POST"])
 @token_required
-def create_master():
+@role_required(["super_admin"])
+def create_master(current_user):
+
     data = request.json
+
     db, cursor = get_db()
-    cursor.execute(
-        """
+
+    cursor.execute("""
         INSERT INTO masters
         (name, description)
-        VALUES (%s,%s)
-        """,
-        (
-            data["name"],
-            data["description"]
-        )
-    )
+        VALUES (%s, %s)
+    """, (
+        data["name"],
+        data["description"]
+    ))
+
     db.commit()
+
     cursor.close()
     db.close()
+
     return jsonify({
         "message": "Master Created"
     })
 
+
 @masters_bp.route("/masters/<int:id>", methods=["PUT"])
 @token_required
-def update_master(id):
+@role_required(["super_admin"])
+def update_master(current_user, id):
+
     data = request.json
+
     db, cursor = get_db()
-    cursor.execute(
-        """
+
+    cursor.execute("""
         UPDATE masters
         SET name=%s,
             description=%s
         WHERE id=%s
-        """,
-        (
-            data["name"],
-            data["description"],
-            id
-        )
-    )
+    """, (
+        data["name"],
+        data["description"],
+        id
+    ))
+
     db.commit()
+
     cursor.close()
     db.close()
+
     return jsonify({
         "message": "Master Updated"
     })
+
+
 @masters_bp.route("/masters/<int:id>", methods=["DELETE"])
 @token_required
-def delete_master(id):
+@role_required(["super_admin"])
+def delete_master(current_user, id):
+
     db, cursor = get_db()
-    cursor.execute(
-        """
+
+    cursor.execute("""
         DELETE FROM masters
         WHERE id=%s
-        """,
-        (id,)
-    )
+    """, (id,))
+
     db.commit()
+
     cursor.close()
     db.close()
 
