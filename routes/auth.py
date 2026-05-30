@@ -26,26 +26,28 @@ cursor.execute(
 )
 super_admin = cursor.fetchone()
 if super_admin:
-        token = jwt.encode(
-            {
-                "email": email,
-                "role": "super_admin",
-                "exp": datetime.datetime.utcnow()
-                + datetime.timedelta(hours=24)
-            },
-
-            current_app.config["SECRET_KEY"],
-            algorithm="HS256"
-        )
-
-        return jsonify({
+    token = jwt.encode(
+        {
+            "id": super_admin["id"],
+            "email": super_admin["email"],
             "role": "super_admin",
-            "token": token
-        })
+            "exp":
+            datetime.datetime.utcnow()
+            + datetime.timedelta(hours=24)
+        },
+        current_app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
 
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "role": "super_admin",
+        "token": token
+    })
     # DATABASE CONNECTION
     db, cursor = get_db()
-
     # COMPANY ADMIN LOGIN
     cursor.execute(
         """
@@ -59,30 +61,28 @@ if super_admin:
     )
 
     admin = cursor.fetchone()
-
-    if admin:
-
-        token = jwt.encode(
-            {
-                "admin_id": admin["id"],
-                "email": admin["email"],
-                "role": "company_admin",
-                "exp": datetime.datetime.utcnow()
-                + datetime.timedelta(hours=24)
-            },
-
-            current_app.config["SECRET_KEY"],
-            algorithm="HS256"
-        )
-
-        cursor.close()
-        db.close()
-
-        return jsonify({
+if admin:
+    token = jwt.encode(
+        {
+            "id": admin["id"],
+            "email": admin["email"],
             "role": "company_admin",
-            "admin_id": admin["id"],
-            "token": token
-        })
+            "exp":
+            datetime.datetime.utcnow()
+            + datetime.timedelta(hours=24)
+        },
+        current_app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "role": "company_admin",
+        "admin_id": admin["id"],
+        "token": token
+    })
 
     # COMPANY USER LOGIN
     cursor.execute(
