@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from middleware.auth_middleware import token_required
+from middleware.role_middleware import role_required
 from db import get_db
 operations_bp = Blueprint("operations", __name__)
 @operations_bp.route("/operations", methods=["GET"])
@@ -19,6 +20,7 @@ def get_operations():
     return jsonify(operations)
 @operations_bp.route("/operations", methods=["POST"])
 @token_required
+@role_required(["super_admin"])
 def create_operation():
     data = request.json
     db, cursor = get_db()
@@ -42,6 +44,7 @@ def create_operation():
     })
 @operations_bp.route("/operations/<int:id>", methods=["PUT"])
 @token_required
+@role_required(["super_admin"])
 def update_operation(id):
     data = request.json
     db, cursor = get_db()
@@ -67,6 +70,7 @@ def update_operation(id):
     })
 @operations_bp.route("/operations/<int:id>", methods=["DELETE"])
 @token_required
+@role_required(["super_admin"])
 def delete_operation(id):
     db, cursor = get_db()
     cursor.execute(
