@@ -47,7 +47,7 @@ def get_users(current_user):
 @users_bp.route("/users/<int:user_id>", methods=["GET"])
 @token_required
 @role_required(["super_admin","company_admin"])
-def get_user(user_id):
+def get_user(current_user):
 
     db, cursor = get_db()
 
