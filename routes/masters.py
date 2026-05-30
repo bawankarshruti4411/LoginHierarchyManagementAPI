@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from db import get_db
-
+from middleware.auth_middleware import token_required
+from middleware.role_middleware import role_required
 masters_bp = Blueprint("masters", __name__)
 
 @masters_bp.route("/masters", methods=["GET"])
 @token_required
+@role_required(["super_admin"])
 def get_masters():
 
     db, cursor = get_db()
