@@ -1,15 +1,11 @@
 from flask import Blueprint, jsonify, request
-
+from middleware.auth_middleware import token_required
 from db import get_db
-
 operations_bp = Blueprint("operations", __name__)
-
-
 @operations_bp.route("/operations", methods=["GET"])
+@token_required
 def get_operations():
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         SELECT *
@@ -17,22 +13,15 @@ def get_operations():
         ORDER BY id
         """
     )
-
     operations = cursor.fetchall()
-
     cursor.close()
     db.close()
-
     return jsonify(operations)
-
-
 @operations_bp.route("/operations", methods=["POST"])
+@token_required
 def create_operation():
-
     data = request.json
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         INSERT INTO operations
@@ -44,24 +33,18 @@ def create_operation():
             data["description"]
         )
     )
-
     db.commit()
-
     cursor.close()
     db.close()
 
     return jsonify({
         "message": "Operation Created"
     })
-
-
 @operations_bp.route("/operations/<int:id>", methods=["PUT"])
+@token_required
 def update_operation(id):
-
     data = request.json
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         UPDATE operations
@@ -77,20 +60,15 @@ def update_operation(id):
     )
 
     db.commit()
-
     cursor.close()
     db.close()
-
     return jsonify({
         "message": "Operation Updated"
     })
-
-
 @operations_bp.route("/operations/<int:id>", methods=["DELETE"])
+@token_required
 def delete_operation(id):
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         DELETE FROM operations
@@ -98,12 +76,9 @@ def delete_operation(id):
         """,
         (id,)
     )
-
     db.commit()
-
     cursor.close()
     db.close()
-
     return jsonify({
         "message": "Operation Deleted"
     })
