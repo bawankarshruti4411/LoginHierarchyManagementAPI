@@ -1,25 +1,17 @@
 from flask import Blueprint, jsonify, request
 from db import get_db
-
+from middleware.auth_middleware import token_required
 permissions_bp = Blueprint(
     "permissions",
     __name__
 )
-
-
-@permissions_bp.route(
-    "/assign-operation",
-    methods=["POST"]
-)
+@permissions_bp.route("/assign-operation",methods=["POST"])
+@token_required
 def assign_operation():
-
     data = request.json
-
     user_id = data["user_id"]
     operation_ids = data["operation_ids"]
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         DELETE FROM user_operations
@@ -27,12 +19,10 @@ def assign_operation():
         """,
         (user_id,)
     )
-
     values = [
         (user_id, op_id)
         for op_id in operation_ids
     ]
-
     cursor.executemany(
         """
         INSERT INTO user_operations
@@ -46,7 +36,6 @@ def assign_operation():
     )
 
     db.commit()
-
     cursor.close()
     db.close()
 
@@ -54,16 +43,10 @@ def assign_operation():
         "message":
         "Permissions Assigned Successfully"
     })
-
-
-@permissions_bp.route(
-    "/user/<int:user_id>/operations",
-    methods=["GET"]
-)
+@permissions_bp.route("/user/<int:user_id>/operations",methods=["GET"])
+@token_required
 def get_user_operations(user_id):
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         SELECT
@@ -80,28 +63,19 @@ def get_user_operations(user_id):
         """,
         (user_id,)
     )
-
     operations = cursor.fetchall()
 
     cursor.close()
     db.close()
 
     return jsonify(operations)
-
-
-@permissions_bp.route(
-    "/check-access",
-    methods=["POST"]
-)
+@permissions_bp.route("/check-access",methods=["POST"])
+@token_required
 def check_access():
-
     data = request.json
-
     user_id = data["user_id"]
     operation_id = data["operation_id"]
-
     db, cursor = get_db()
-
     cursor.execute(
         """
         SELECT EXISTS(
@@ -118,10 +92,8 @@ def check_access():
     )
 
     result = cursor.fetchone()
-
     cursor.close()
     db.close()
-
     return jsonify({
         "access":
         bool(result["access"])
