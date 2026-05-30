@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from db import get_db
 from middleware.auth_middleware import token_required
+from middleware.role_middleware import role_required
 users_bp = Blueprint("users", __name__)
 
 @users_bp.route("/users", methods=["GET"])
 @token_required
+@role_required(["super_admin","company_admin"])
 def get_users(current_user):
 
     page = int(
@@ -44,14 +46,13 @@ return jsonify({
     "data": users
 })
     users = cursor.fetchall()
-
     cursor.close()
     db.close()
-
     return jsonify(users)
 
 @users_bp.route("/users/<int:user_id>", methods=["GET"])
 @token_required
+@role_required(["super_admin","company_admin"])
 def get_user(user_id):
 
     db, cursor = get_db()
@@ -77,6 +78,7 @@ def get_user(user_id):
 
 @users_bp.route("/users", methods=["POST"])
 @token_required
+@role_required(["company_admin"])
 def create_user(current_user):
     data = request.json
     name = data.get("name")
@@ -106,11 +108,9 @@ def create_user(current_user):
         "User Created Successfully"
     })
 
-@users_bp.route(
-    "/users/<int:user_id>",
-    methods=["DELETE"]
-)
+@users_bp.route("/users/<int:user_id>",methods=["DELETE"])
 @token_required
+@role_required(["company_admin"])
 def delete_user(current_user, user_id):
     try:
         db, cursor = get_db()
@@ -141,11 +141,9 @@ def delete_user(current_user, user_id):
         return jsonify({
             "error": str(e)
         }), 500
-@users_bp.route(
-    "/users/<int:user_id>",
-    methods=["PUT"]
-)
+@users_bp.route( "/users/<int:user_id>",methods=["PUT"])
 @token_required
+@role_required(["company_admin"])
 def update_user(current_user, user_id):
     try:
         data = request.json
