@@ -95,73 +95,78 @@ def get_users(current_user):
 @role_required(["super_admin", "company_admin"])
 def create_user(current_user):
 
+    try:
 
-    data = request.json
-
-
-    name = data.get("name")
-    email = data.get("email")
-    password = data.get("password")
+        data = request.json
 
 
-    # company admin creates user
-    if current_user["role"] == "company_admin":
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
 
-        admin_id = current_user["id"]
 
+        if current_user["role"] == "company_admin":
 
-    else:
+            admin_id = current_user["id"]
 
-        # super admin created user
-        admin_id = None
+        else:
+
+            admin_id = data.get("admin_id", 1)
 
 
 
-    db, cursor = get_db()
+        db, cursor = get_db()
 
 
+        cursor.execute(
+            """
+            INSERT INTO company_users
+            (
+                name,
+                email,
+                password,
+                admin_id
+            )
 
-    cursor.execute(
+            VALUES(%s,%s,%s,%s)
+            """,
 
-        """
-        INSERT INTO company_users
-        (
-        name,
-        email,
-        password,
-        admin_id
+            (
+                name,
+                email,
+                password,
+                admin_id
+            )
         )
 
-        VALUES(%s,%s,%s,%s)
 
-        """,
-
-        (
-        name,
-        email,
-        password,
-        admin_id
-        )
-
-    )
+        db.commit()
 
 
+        cursor.close()
+        db.close()
 
-    db.commit()
 
+        return jsonify({
 
-    cursor.close()
-    db.close()
+            "message":
+            "User Created Successfully"
+
+        }), 201
 
 
 
-    return jsonify({
+    except Exception as e:
 
-        "message":
-        "User Created Successfully"
 
-    })
+        print("CREATE USER ERROR:", e)
 
+
+        return jsonify({
+
+            "error": str(e)
+
+        }), 500
 
 
 
