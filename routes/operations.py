@@ -53,7 +53,12 @@ def get_operations(current_user):
 methods=["POST"]
 )
 @token_required
-@role_required(["super_admin"])
+@role_required(
+[
+"super_admin",
+"company_admin"
+]
+)
 def create_operation(current_user):
 
 
@@ -125,40 +130,59 @@ def create_operation(current_user):
 methods=["DELETE"]
 )
 @token_required
-@role_required(["super_admin"])
+@role_required(
+[
+"super_admin",
+"company_admin"
+]
+)
 def delete_operation(
 current_user,
 id
 ):
 
 
-    db,cursor=get_db()
+    try:
 
 
-    cursor.execute(
-
-    """
-    DELETE FROM operations
-
-    WHERE id=%s
-    """,
-
-    (id,)
-
-    )
+        db,cursor=get_db()
 
 
-    db.commit()
+        cursor.execute(
+
+        """
+        DELETE FROM operations
+
+        WHERE id=%s
+        """,
+
+        (id,)
+
+        )
 
 
-    cursor.close()
-
-    db.close()
+        db.commit()
 
 
-    return jsonify({
+        cursor.close()
 
-    "message":
-    "Deleted"
+        db.close()
 
-    })
+
+        return jsonify({
+
+        "message":
+        "Operation Deleted Successfully"
+
+        })
+
+
+
+    except Exception as e:
+
+
+        return jsonify({
+
+        "error":str(e)
+
+        }),500
