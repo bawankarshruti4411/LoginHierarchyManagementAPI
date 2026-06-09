@@ -29,55 +29,154 @@ def get_users(current_user):
     db, cursor = get_db()
 
 
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM company_users
-        """
-    )
+    try:
 
 
-    total = cursor.fetchone()["total"]
+        # ============================
+        # SUPER ADMIN
+        # can see all company users
+        # ============================
+
+        if current_user["role"] == "super_admin":
 
 
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS total
+                FROM company_users
+                """
+            )
 
-    cursor.execute(
-        """
-        SELECT
-            id,
-            name,
-            email
 
-        FROM company_users
-
-        ORDER BY id DESC
-
-        LIMIT %s OFFSET %s
-        """,
-        (limit, offset)
-    )
+            total = cursor.fetchone()["total"]
 
 
 
-    users = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    email
+
+                FROM company_users
+
+                ORDER BY id DESC
+
+                LIMIT %s OFFSET %s
+                """,
+
+                (
+                    limit,
+                    offset
+                )
+            )
 
 
-    cursor.close()
-    db.close()
 
 
 
-    return jsonify({
+        # ============================
+        # COMPANY ADMIN
+        # can see only own users
+        # ============================
 
-        "total": total,
+        else:
 
-        "page": page,
 
-        "limit": limit,
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS total
 
-        "data": users
+                FROM company_users
 
-    })
+                WHERE admin_id=%s
+                """,
+
+                (
+                    current_user["id"],
+                )
+            )
+
+
+
+            total = cursor.fetchone()["total"]
+
+
+
+
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    name,
+                    email
+
+                FROM company_users
+
+                WHERE admin_id=%s
+
+                ORDER BY id DESC
+
+                LIMIT %s OFFSET %s
+                """,
+
+                (
+                    current_user["id"],
+                    limit,
+                    offset
+                )
+            )
+
+
+
+
+
+        users = cursor.fetchall()
+
+
+
+        return jsonify({
+
+            "total": total,
+
+            "page": page,
+
+            "limit": limit,
+
+            "data": users
+
+        })
+
+
+
+
+
+    except Exception as e:
+
+
+        print(
+            "GET USERS ERROR:",
+            e
+        )
+
+
+        return jsonify({
+
+            "error": str(e)
+
+        }),500
+
+
+
+
+
+    finally:
+
+
+        cursor.close()
+
+        db.close()
 
 
 
