@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from db import get_db
+from db import get_db, release_db
 from middleware.auth_middleware import token_required
 from middleware.role_middleware import role_required
 
@@ -13,18 +13,20 @@ def get_masters(current_user):
 
     db, cursor = get_db()
 
-    cursor.execute("""
-        SELECT *
-        FROM masters
-        ORDER BY id
-    """)
+    try:
+        cursor.execute("""
+            SELECT *
+            FROM masters
+            ORDER BY id
+        """)
 
-    masters = cursor.fetchall()
+        masters = cursor.fetchall()
 
-    cursor.close()
-    db.close()
+        return jsonify(masters)
 
-    return jsonify(masters)
+    finally:
+        cursor.close()
+        release_db(db)
 
 
 @masters_bp.route("/masters", methods=["POST"])
@@ -36,23 +38,25 @@ def create_master(current_user):
 
     db, cursor = get_db()
 
-    cursor.execute("""
-        INSERT INTO masters
-        (name, description)
-        VALUES (%s, %s)
-    """, (
-        data["name"],
-        data["description"]
-    ))
+    try:
+        cursor.execute("""
+            INSERT INTO masters
+            (name, description)
+            VALUES (%s, %s)
+        """, (
+            data["name"],
+            data["description"]
+        ))
 
-    db.commit()
+        db.commit()
 
-    cursor.close()
-    db.close()
+        return jsonify({
+            "message": "Master Created"
+        })
 
-    return jsonify({
-        "message": "Master Created"
-    })
+    finally:
+        cursor.close()
+        release_db(db)
 
 
 @masters_bp.route("/masters/<int:id>", methods=["PUT"])
@@ -64,25 +68,27 @@ def update_master(current_user, id):
 
     db, cursor = get_db()
 
-    cursor.execute("""
-        UPDATE masters
-        SET name=%s,
-            description=%s
-        WHERE id=%s
-    """, (
-        data["name"],
-        data["description"],
-        id
-    ))
+    try:
+        cursor.execute("""
+            UPDATE masters
+            SET name=%s,
+                description=%s
+            WHERE id=%s
+        """, (
+            data["name"],
+            data["description"],
+            id
+        ))
 
-    db.commit()
+        db.commit()
 
-    cursor.close()
-    db.close()
+        return jsonify({
+            "message": "Master Updated"
+        })
 
-    return jsonify({
-        "message": "Master Updated"
-    })
+    finally:
+        cursor.close()
+        release_db(db)
 
 
 @masters_bp.route("/masters/<int:id>", methods=["DELETE"])
@@ -92,16 +98,18 @@ def delete_master(current_user, id):
 
     db, cursor = get_db()
 
-    cursor.execute("""
-        DELETE FROM masters
-        WHERE id=%s
-    """, (id,))
+    try:
+        cursor.execute("""
+            DELETE FROM masters
+            WHERE id=%s
+        """, (id,))
 
-    db.commit()
+        db.commit()
 
-    cursor.close()
-    db.close()
+        return jsonify({
+            "message": "Master Deleted"
+        })
 
-    return jsonify({
-        "message": "Master Deleted"
-    })
+    finally:
+        cursor.close()
+        release_db(db)
