@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from db import get_db
+from db import get_db, release_db
 
 from middleware.auth_middleware import token_required
 from middleware.role_middleware import role_required
@@ -9,11 +9,9 @@ from middleware.role_middleware import role_required
 users_bp = Blueprint("users", __name__)
 
 
-
 # ============================
 # GET ALL USERS
 # ============================
-
 
 @users_bp.route("/users", methods=["GET"])
 @token_required
@@ -22,23 +20,16 @@ def get_users(current_user):
 
     page = int(request.args.get("page", 1))
     limit = int(request.args.get("limit", 20))
-
     offset = (page - 1) * limit
-
 
     db, cursor = get_db()
 
-
     try:
-
-
         # ============================
         # SUPER ADMIN
         # can see all company users
         # ============================
-
         if current_user["role"] == "super_admin":
-
 
             cursor.execute(
                 """
@@ -47,364 +38,199 @@ def get_users(current_user):
                 """
             )
 
-
             total = cursor.fetchone()["total"]
-
-
 
             cursor.execute(
                 """
-                SELECT
-                    id,
-                    name,
-                    email
-
+                SELECT id, name, email
                 FROM company_users
-
                 ORDER BY id DESC
-
                 LIMIT %s OFFSET %s
                 """,
-
-                (
-                    limit,
-                    offset
-                )
+                (limit, offset)
             )
-
-
-
-
 
         # ============================
         # COMPANY ADMIN
         # can see only own users
         # ============================
-
         else:
-
 
             cursor.execute(
                 """
                 SELECT COUNT(*) AS total
-
                 FROM company_users
-
                 WHERE admin_id=%s
                 """,
-
-                (
-                    current_user["id"],
-                )
+                (current_user["id"],)
             )
-
-
 
             total = cursor.fetchone()["total"]
 
-
-
-
             cursor.execute(
                 """
-                SELECT
-                    id,
-                    name,
-                    email
-
+                SELECT id, name, email
                 FROM company_users
-
                 WHERE admin_id=%s
-
                 ORDER BY id DESC
-
                 LIMIT %s OFFSET %s
                 """,
-
-                (
-                    current_user["id"],
-                    limit,
-                    offset
-                )
+                (current_user["id"], limit, offset)
             )
-
-
-
-
 
         users = cursor.fetchall()
 
-
-
         return jsonify({
-
             "total": total,
-
             "page": page,
-
             "limit": limit,
-
             "data": users
-
         })
-
-
-
-
 
     except Exception as e:
 
-
-        print(
-            "GET USERS ERROR:",
-            e
-        )
-
+        print("GET USERS ERROR:", e)
 
         return jsonify({
-
             "error": str(e)
-
-        }),500
-
-
-
-
+        }), 500
 
     finally:
-
-
         cursor.close()
-
-        db.close()
-
-
-
-
-
+        release_db(db)
 
 
 # ============================
 # CREATE USER
 # ============================
 
-
 @users_bp.route("/users", methods=["POST"])
 @token_required
 @role_required(["super_admin", "company_admin"])
 def create_user(current_user):
 
+    db = None
+    cursor = None
+
     try:
-
         data = request.json
-
 
         name = data.get("name")
         email = data.get("email")
         password = data.get("password")
 
-
         if current_user["role"] == "company_admin":
-
             admin_id = current_user["id"]
-
         else:
-
             admin_id = data.get("admin_id", 1)
 
-
-
         db, cursor = get_db()
-
 
         cursor.execute(
             """
             INSERT INTO company_users
-            (
-                name,
-                email,
-                password,
-                admin_id
-            )
-
+            (name, email, password, admin_id)
             VALUES(%s,%s,%s,%s)
             """,
-
-            (
-                name,
-                email,
-                password,
-                admin_id
-            )
+            (name, email, password, admin_id)
         )
-
 
         db.commit()
 
-
-        cursor.close()
-        db.close()
-
-
         return jsonify({
-
-            "message":
-            "User Created Successfully"
-
+            "message": "User Created Successfully"
         }), 201
-
-
 
     except Exception as e:
 
-
         print("CREATE USER ERROR:", e)
 
-
         return jsonify({
-
             "error": str(e)
-
         }), 500
 
-
-
-
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            release_db(db)
 
 
 # ============================
 # DELETE USER
 # ============================
 
-
-@users_bp.route(
-"/users/<int:user_id>",
-methods=["DELETE"]
-)
+@users_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @token_required
 @role_required(["super_admin", "company_admin"])
-def delete_user(current_user,user_id):
+def delete_user(current_user, user_id):
 
+    db, cursor = get_db()
 
-    db,cursor = get_db()
+    try:
+        cursor.execute(
+            """
+            DELETE FROM user_operations
+            WHERE user_id=%s
+            """,
+            (user_id,)
+        )
 
+        cursor.execute(
+            """
+            DELETE FROM company_users
+            WHERE id=%s
+            """,
+            (user_id,)
+        )
 
+        db.commit()
 
-    cursor.execute(
+        return jsonify({
+            "message": "User Deleted Successfully"
+        })
 
-        """
-        DELETE FROM user_operations
-
-        WHERE user_id=%s
-
-        """,
-
-        (user_id,)
-
-    )
-
-
-
-    cursor.execute(
-
-        """
-        DELETE FROM company_users
-
-        WHERE id=%s
-
-        """,
-
-        (user_id,)
-
-    )
-
-
-
-    db.commit()
-
-
-    cursor.close()
-    db.close()
-
-
-
-    return jsonify({
-
-        "message":
-        "User Deleted Successfully"
-
-    })
-
-
-
-
-
-
+    finally:
+        cursor.close()
+        release_db(db)
 
 
 # ============================
 # UPDATE USER
 # ============================
 
-
-@users_bp.route(
-"/users/<int:user_id>",
-methods=["PUT"]
-)
+@users_bp.route("/users/<int:user_id>", methods=["PUT"])
 @token_required
 @role_required(["super_admin", "company_admin"])
-def update_user(current_user,user_id):
+def update_user(current_user, user_id):
 
+    data = request.json
 
-    data=request.json
+    db, cursor = get_db()
 
-
-
-    db,cursor=get_db()
-
-
-
-    cursor.execute(
-
-        """
-        UPDATE company_users
-
-        SET
-
-        name=%s,
-
-        email=%s,
-
-        password=%s
-
-
-        WHERE id=%s
-
-        """,
-
-        (
-        data.get("name"),
-        data.get("email"),
-        data.get("password"),
-        user_id
+    try:
+        cursor.execute(
+            """
+            UPDATE company_users
+            SET name=%s,
+                email=%s,
+                password=%s
+            WHERE id=%s
+            """,
+            (
+                data.get("name"),
+                data.get("email"),
+                data.get("password"),
+                user_id
+            )
         )
 
-    )
+        db.commit()
 
+        return jsonify({
+            "message": "User Updated Successfully"
+        })
 
-
-    db.commit()
-
-
-
-    cursor.close()
-    db.close()
-
-
-
-    return jsonify({
-
-        "message":
-        "User Updated Successfully"
-
-    })
+    finally:
+        cursor.close()
+        release_db(db)
